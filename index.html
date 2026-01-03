@@ -1,96 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <title>3facs</title>
 <style>
-body{
-  background:#0b0b0b;
-  color:#eaeaea;
-  font-family:monospace;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-#box{width:600px}
-textarea{
-  width:100%;
-  height:140px;
-  background:#111;
-  color:#0f0;
-  border:1px solid #333;
-  padding:10px;
-  box-sizing:border-box;
-}
-button{
-  width:49%;
-  margin-top:10px;
-  background:#222;
-  color:#fff;
-  border:1px solid #444;
-  padding:10px;
-  cursor:pointer;
-}
-button:hover{background:#333}
+body{background:#000;color:#0f0;font-family:monospace;display:flex;justify-content:center;align-items:center;height:100vh}
+textarea,select,input,button{width:100%;background:#111;color:#0f0;border:1px solid #333;margin:4px 0;padding:6px}
+button{cursor:pointer}
 </style>
 </head>
 <body>
-<div id="box">
-  <textarea id="input" placeholder="input"></textarea>
-  <textarea id="output" placeholder="output"></textarea>
-  <button onclick="encode()">encode</button>
-  <button onclick="decode()">decode</button>
+<div style="width:520px">
+<textarea id="in" placeholder="input"></textarea>
+
+<select id="chain" multiple size="8">
+<option value="shift">shift</option>
+<option value="base64">base64</option>
+<option value="morse">morse</option>
+<option value="xor">xor</option>
+<option value="rev">reverse</option>
+<option value="rot">rot</option>
+<option value="hex">hex</option>
+<option value="bin">binary</option>
+<option value="b64u">base64url</option>
+<option value="swap">swapcase</option>
+</select>
+
+<input id="key" placeholder="key / number">
+
+<button onclick="enc()">encode</button>
+<button onclick="dec()">decode</button>
+
+<textarea id="out" placeholder="output"></textarea>
 </div>
 
 <script>
-// shift cipher
-function caesar(str, shift){
-  return str.split("").map(c=>{
-    let n=c.charCodeAt(0);
-    if(n>=32 && n<=126){
-      return String.fromCharCode(((n-32+shift)%95+95)%95+32);
-    }
-    return c;
-  }).join("");
+const sel=()=>[...chain.selectedOptions].map(o=>o.value)
+const ca=(s,n)=>[...s].map(c=>{let x=c.charCodeAt(0);return x>=32&&x<=126?String.fromCharCode((x-32+n+95)%95+32):c}).join("")
+const xor=(s,k)=>[...s].map((c,i)=>String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))).join("")
+const mor=e=>[...e].map(c=>c.charCodeAt(0).toString(2).padStart(8,"0").replace(/0/g,".").replace(/1/g,"-")).join(" ")
+const unm=e=>e.split(" ").map(b=>String.fromCharCode(parseInt(b.replace(/\./g,"0").replace(/-/g,"1"),2))).join("")
+const f={
+shift:(s,k)=>ca(s,+k||7),
+base64:s=>btoa(s),
+morse:s=>mor(s),
+xor:(s,k)=>xor(s,k||"k"),
+rev:s=>[...s].reverse().join(""),
+rot:(s,k)=>ca(s,+k||13),
+hex:s=>[...s].map(c=>c.charCodeAt(0).toString(16)).join(" "),
+bin:s=>[...s].map(c=>c.charCodeAt(0).toString(2)).join(" "),
+b64u:s=>btoa(s).replace(/\+/g,"-").replace(/\//g,"_"),
+swap:s=>[...s].map(c=>c==c.toUpperCase()?c.toLowerCase():c.toUpperCase()).join("")
+}
+const r={
+shift:(s,k)=>ca(s,-(+k||7)),
+base64:s=>atob(s),
+morse:s=>unm(s),
+xor:(s,k)=>xor(s,k||"k"),
+rev:s=>[...s].reverse().join(""),
+rot:(s,k)=>ca(s,-(+k||13)),
+hex:s=>s.split(" ").map(h=>String.fromCharCode(parseInt(h,16))).join(""),
+bin:s=>s.split(" ").map(b=>String.fromCharCode(parseInt(b,2))).join(""),
+b64u:s=>atob(s.replace(/-/g,"+").replace(/_/g,"/")),
+swap:s=>[...s].map(c=>c==c.toUpperCase()?c.toLowerCase():c.toUpperCase()).join("")
 }
 
-// binary morse (lossless)
-function toMorse(str){
-  return [...str].map(c=>{
-    return c.charCodeAt(0)
-      .toString(2)
-      .padStart(8,"0")
-      .replace(/0/g,".")
-      .replace(/1/g,"-");
-  }).join(" / ");
+function enc(){
+let t=in.value,k=key.value
+sel().forEach(c=>t=f[c](t,k))
+out.value=t
 }
-
-function fromMorse(str){
-  return str.split(" / ").map(bits=>{
-    let bin = bits.replace(/\./g,"0").replace(/-/g,"1");
-    return String.fromCharCode(parseInt(bin,2));
-  }).join("");
-}
-
-// opposite order:
-// morse -> base64 -> shift+7
-function encode(){
-  let t = document.getElementById("input").value;
-  t = toMorse(t);
-  t = btoa(t);
-  t = caesar(t,7);
-  document.getElementById("output").value = t;
-}
-
-// reverse:
-// shift-7 -> base64 -> morse
-function decode(){
-  let t = document.getElementById("input").value;
-  t = caesar(t,-7);
-  t = atob(t);
-  t = fromMorse(t);
-  document.getElementById("output").value = t;
+function dec(){
+let t=in.value,k=key.value
+sel().slice().reverse().forEach(c=>t=r[c](t,k))
+out.value=t
 }
 </script>
 </body>

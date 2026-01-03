@@ -4,79 +4,104 @@
 <meta charset="utf-8">
 <title>3facs</title>
 <style>
-body{background:#000;color:#0f0;font-family:monospace;display:flex;justify-content:center;align-items:center;height:100vh}
-textarea,input,button{width:100%;background:#111;color:#0f0;border:1px solid #333;margin:6px 0;padding:8px}
+body{
+  background:#000;
+  color:#0f0;
+  font-family:monospace;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh
+}
+textarea,input,button{
+  width:100%;
+  background:#111;
+  color:#0f0;
+  border:1px solid #333;
+  margin:6px 0;
+  padding:8px
+}
 button{cursor:pointer}
 </style>
 </head>
 <body>
+
 <div style="width:520px">
-<input id="key" placeholder="key">
-<textarea id="in" placeholder="input"></textarea>
+<input id="k" placeholder="key">
+<textarea id="inp" placeholder="input"></textarea>
 <button onclick="enc()">encode</button>
 <button onclick="dec()">decode</button>
 <textarea id="out" placeholder="output"></textarea>
 </div>
 
 <script>
+// ===== helpers =====
 const ca=(s,n)=>[...s].map(c=>{
-let x=c.charCodeAt(0)
-return x>=32&&x<=126?String.fromCharCode((x-32+n+95)%95+32):c
+  let x=c.charCodeAt(0)
+  return x>=32&&x<=126
+    ?String.fromCharCode((x-32+n+95)%95+32)
+    :c
 }).join("")
 
 const xor=(s,k)=>[...s].map((c,i)=>
-String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))
+  String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))
 ).join("")
 
 const b64=s=>btoa(unescape(encodeURIComponent(s)))
 const ub64=s=>decodeURIComponent(escape(atob(s)))
 
 const mor=s=>[...s].map(c=>
-c.charCodeAt(0).toString(2).padStart(8,"0")
-.replace(/0/g,".").replace(/1/g,"-")
+  c.charCodeAt(0)
+   .toString(2).padStart(8,"0")
+   .replace(/0/g,".").replace(/1/g,"-")
 ).join(" ")
+
 const umor=s=>s.split(" ").map(b=>
-String.fromCharCode(parseInt(b.replace(/\./g,"0").replace(/-/g,"1"),2))
+  String.fromCharCode(
+    parseInt(b.replace(/\./g,"0").replace(/-/g,"1"),2)
+  )
 ).join("")
 
+// ===== key mutation =====
 function keychain(k){
-k=ca(k,7)
-k=b64(k)
-k=ca(k,13)
-k=mor(k)
-k=b64(k)
-return k
-}
-function unkeychain(k){
-k=ub64(k)
-k=umor(k)
-k=ca(k,-13)
-k=ub64(k)
-k=ca(k,-7)
-return k
+  k=ca(k,7)
+  k=b64(k)
+  k=ca(k,13)
+  k=mor(k)
+  k=b64(k)
+  return k
 }
 
+// ===== encode =====
 function enc(){
-let k=keychain(key.value||"0")
-let t=in.value
-t=ca(t,7)
-t=xor(t,k)
-t=b64(t)
-t=mor(t)
-t=b64(t)
-out.value=t
+  console.log("encode")
+  let key = keychain(document.getElementById("k").value || "0")
+  let t = document.getElementById("inp").value
+
+  t=ca(t,7)
+  t=xor(t,key)
+  t=b64(t)
+  t=mor(t)
+  t=b64(t)
+
+  document.getElementById("out").value=t
 }
 
+// ===== decode =====
 function dec(){
-let k=unkeychain(keychain(key.value||"0"))
-let t=in.value
-t=ub64(t)
-t=umor(t)
-t=ub64(t)
-t=xor(t,k)
-t=ca(t,-7)
-out.value=t
+  console.log("decode")
+  let key = keychain(document.getElementById("k").value || "0")
+  let t = document.getElementById("inp").value
+
+  t=ub64(t)
+  t=umor(t)
+  t=ub64(t)
+  t=xor(t,key)
+  t=ca(t,-7)
+
+  document.getElementById("out").value=t
 }
 </script>
+
 </body>
 </html>

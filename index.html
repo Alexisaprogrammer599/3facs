@@ -22,6 +22,8 @@ textarea,input,button{
   padding:8px
 }
 button{cursor:pointer}
+.flash{animation:f .3s}
+@keyframes f{0%{background:#030}100%{background:#111}}
 </style>
 </head>
 <body>
@@ -29,13 +31,12 @@ button{cursor:pointer}
 <div style="width:520px">
 <input id="k" placeholder="key">
 <textarea id="inp" placeholder="input"></textarea>
-<button onclick="enc()">encode</button>
-<button onclick="dec()">decode</button>
-<textarea id="out" placeholder="output"></textarea>
+<button onclick="enc()">ENCODE</button>
+<button onclick="dec()">DECODE</button>
+<textarea id="out" placeholder="output (this WILL change)"></textarea>
 </div>
 
 <script>
-// ===== helpers =====
 const ca=(s,n)=>[...s].map(c=>{
   let x=c.charCodeAt(0)
   return x>=32&&x<=126
@@ -44,16 +45,17 @@ const ca=(s,n)=>[...s].map(c=>{
 }).join("")
 
 const xor=(s,k)=>[...s].map((c,i)=>
-  String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))
+  String.fromCharCode(
+    c.charCodeAt(0)^k.charCodeAt(i%k.length)
+  )
 ).join("")
 
 const b64=s=>btoa(unescape(encodeURIComponent(s)))
 const ub64=s=>decodeURIComponent(escape(atob(s)))
 
 const mor=s=>[...s].map(c=>
-  c.charCodeAt(0)
-   .toString(2).padStart(8,"0")
-   .replace(/0/g,".").replace(/1/g,"-")
+  c.charCodeAt(0).toString(2).padStart(8,"0")
+  .replace(/0/g,".").replace(/1/g,"-")
 ).join(" ")
 
 const umor=s=>s.split(" ").map(b=>
@@ -62,44 +64,47 @@ const umor=s=>s.split(" ").map(b=>
   )
 ).join("")
 
-// ===== key mutation =====
 function keychain(k){
   k=ca(k,7)
   k=b64(k)
   k=ca(k,13)
   k=mor(k)
-  k=b64(k)
-  return k
+  return b64(k)
 }
 
-// ===== encode =====
-function enc(){
-  console.log("encode")
-  let key = keychain(document.getElementById("k").value || "0")
-  let t = document.getElementById("inp").value
+function flash(){
+  out.classList.remove("flash")
+  void out.offsetWidth
+  out.classList.add("flash")
+}
 
+function enc(){
+  if(!inp.value){alert("INPUT IS EMPTY");return}
+  let key=keychain(k.value||"0")
+  let t=inp.value
   t=ca(t,7)
   t=xor(t,key)
   t=b64(t)
   t=mor(t)
   t=b64(t)
-
-  document.getElementById("out").value=t
+  out.value=t
+  navigator.clipboard.writeText(t)
+  flash()
+  console.log("ENCODED:",t)
 }
 
-// ===== decode =====
 function dec(){
-  console.log("decode")
-  let key = keychain(document.getElementById("k").value || "0")
-  let t = document.getElementById("inp").value
-
+  if(!inp.value){alert("INPUT IS EMPTY");return}
+  let key=keychain(k.value||"0")
+  let t=inp.value
   t=ub64(t)
   t=umor(t)
   t=ub64(t)
   t=xor(t,key)
   t=ca(t,-7)
-
-  document.getElementById("out").value=t
+  out.value=t
+  flash()
+  console.log("DECODED:",t)
 }
 </script>
 

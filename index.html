@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3facs</title>
+<style>
+body {
+  background:#0f0f0f;
+  color:#eaeaea;
+  font-family: monospace;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+#box {
+  width:600px;
+}
+textarea {
+  width:100%;
+  height:140px;
+  background:#111;
+  color:#0f0;
+  border:1px solid #333;
+  padding:10px;
+  box-sizing:border-box;
+}
+button {
+  width:49%;
+  margin-top:10px;
+  background:#222;
+  color:#fff;
+  border:1px solid #444;
+  padding:10px;
+  cursor:pointer;
+}
+button:hover {
+  background:#333;
+}
+</style>
+</head>
+<body>
+<div id="box">
+  <textarea id="input" placeholder="input"></textarea>
+  <textarea id="output" placeholder="output"></textarea>
+  <button onclick="encode()">encode</button>
+  <button onclick="decode()">decode</button>
+</div>
+
+<script>
+const morseMap = {
+  A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",
+  G:"--.",H:"....",I:"..",J:".---",K:"-.-",L:".-..",
+  M:"--",N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",
+  S:"...",T:"-",U:"..-",V:"...-",W:".--",X:"-..-",
+  Y:"-.--",Z:"--..",
+  0:"-----",1:".----",2:"..---",3:"...--",4:"....-",
+  5:".....",6:"-....",7:"--...",8:"---..",9:"----."
+};
+const revMorse = Object.fromEntries(Object.entries(morseMap).map(e=>[e[1],e[0]]));
+
+function caesar(str, shift) {
+  return str.split("").map(c=>{
+    let code=c.charCodeAt(0);
+    if(code>=32 && code<=126){
+      return String.fromCharCode(((code-32+shift)%95+95)%95+32);
+    }
+    return c;
+  }).join("");
+}
+
+function toMorse(str){
+  return str.toUpperCase().split("").map(c=>{
+    if(c===" ") return "/";
+    return morseMap[c]||"";
+  }).join(" ");
+}
+
+function fromMorse(str){
+  return str.split(" ").map(c=>{
+    if(c==="/") return " ";
+    return revMorse[c]||"";
+  }).join("");
+}
+
+function encode(){
+  let t=document.getElementById("input").value;
+  t=caesar(t,7);
+  t=btoa(t);
+  t=toMorse(t);
+  document.getElementById("output").value=t;
+}
+
+function decode(){
+  let t=document.getElementById("input").value;
+  t=fromMorse(t);
+  t=atob(t);
+  t=caesar(t,-7);
+  document.getElementById("output").value=t;
+}
+</script>
+</body>
+</html>

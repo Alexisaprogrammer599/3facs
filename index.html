@@ -13,7 +13,7 @@ body{
   align-items:center;
   height:100vh
 }
-textarea,input,button{
+textarea,button{
   width:100%;
   background:#111;
   color:#0f0;
@@ -22,89 +22,60 @@ textarea,input,button{
   padding:8px
 }
 button{cursor:pointer}
-.flash{animation:f .3s}
-@keyframes f{0%{background:#030}100%{background:#111}}
 </style>
 </head>
 <body>
 
 <div style="width:520px">
-<input id="k" placeholder="key">
 <textarea id="inp" placeholder="input"></textarea>
 <button onclick="enc()">ENCODE</button>
 <button onclick="dec()">DECODE</button>
-<textarea id="out" placeholder="output (this WILL change)"></textarea>
+<textarea id="out" placeholder="output"></textarea>
 </div>
 
 <script>
-const ca=(s,n)=>[...s].map(c=>{
+// shift +7
+const ca = (s,n)=>[...s].map(c=>{
   let x=c.charCodeAt(0)
-  return x>=32&&x<=126
+  return (x>=32&&x<=126)
     ?String.fromCharCode((x-32+n+95)%95+32)
     :c
 }).join("")
 
-const xor=(s,k)=>[...s].map((c,i)=>
-  String.fromCharCode(
-    c.charCodeAt(0)^k.charCodeAt(i%k.length)
-  )
-).join("")
+// safe base64
+const b64 = s => btoa(unescape(encodeURIComponent(s)))
+const ub64 = s => decodeURIComponent(escape(atob(s)))
 
-const b64=s=>btoa(unescape(encodeURIComponent(s)))
-const ub64=s=>decodeURIComponent(escape(atob(s)))
-
-const mor=s=>[...s].map(c=>
-  c.charCodeAt(0).toString(2).padStart(8,"0")
-  .replace(/0/g,".").replace(/1/g,"-")
+// binary-morse (lossless)
+const mor = s => [...s].map(c =>
+  c.charCodeAt(0)
+   .toString(2).padStart(8,"0")
+   .replace(/0/g,".")
+   .replace(/1/g,"-")
 ).join(" ")
 
-const umor=s=>s.split(" ").map(b=>
+const umor = s => s.split(" ").map(b =>
   String.fromCharCode(
     parseInt(b.replace(/\./g,"0").replace(/-/g,"1"),2)
   )
 ).join("")
 
-function keychain(k){
-  k=ca(k,7)
-  k=b64(k)
-  k=ca(k,13)
-  k=mor(k)
-  return b64(k)
-}
-
-function flash(){
-  out.classList.remove("flash")
-  void out.offsetWidth
-  out.classList.add("flash")
-}
-
 function enc(){
-  if(!inp.value){alert("INPUT IS EMPTY");return}
-  let key=keychain(k.value||"0")
-  let t=inp.value
-  t=ca(t,7)
-  t=xor(t,key)
-  t=b64(t)
-  t=mor(t)
-  t=b64(t)
-  out.value=t
-  navigator.clipboard.writeText(t)
-  flash()
-  console.log("ENCODED:",t)
+  if(!inp.value){alert("no input");return}
+  let t = inp.value
+  t = ca(t,7)
+  t = b64(t)
+  t = mor(t)
+  out.value = t
 }
 
 function dec(){
-  if(!inp.value){alert("INPUT IS EMPTY");return}
-  let key=keychain(k.value||"0")
-  let t=inp.value
-  t=ub64(t)
-  t=umor(t)
-  t=ub64(t)
-  t=xor(t,key)
-  t=ca(t,-7)
-  out.value=t
-  flash()
-  console.log("DECODED:",t)
+  if(!inp.value){alert("no input");return}
+  let t = inp.value
+  t = umor(t)
+  t = ub64(t)
+  t = ca(t,-7)
+  out.value = t
 }
 </script>
 

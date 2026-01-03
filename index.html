@@ -4,19 +4,17 @@
 <meta charset="UTF-8">
 <title>3facs</title>
 <style>
-body {
-  background:#0f0f0f;
+body{
+  background:#0b0b0b;
   color:#eaeaea;
-  font-family: monospace;
+  font-family:monospace;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
 }
-#box {
-  width:600px;
-}
-textarea {
+#box{width:600px}
+textarea{
   width:100%;
   height:140px;
   background:#111;
@@ -25,7 +23,7 @@ textarea {
   padding:10px;
   box-sizing:border-box;
 }
-button {
+button{
   width:49%;
   margin-top:10px;
   background:#222;
@@ -34,9 +32,7 @@ button {
   padding:10px;
   cursor:pointer;
 }
-button:hover {
-  background:#333;
-}
+button:hover{background:#333}
 </style>
 </head>
 <body>
@@ -48,55 +44,53 @@ button:hover {
 </div>
 
 <script>
-const morseMap = {
-  A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",
-  G:"--.",H:"....",I:"..",J:".---",K:"-.-",L:".-..",
-  M:"--",N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",
-  S:"...",T:"-",U:"..-",V:"...-",W:".--",X:"-..-",
-  Y:"-.--",Z:"--..",
-  0:"-----",1:".----",2:"..---",3:"...--",4:"....-",
-  5:".....",6:"-....",7:"--...",8:"---..",9:"----."
-};
-const revMorse = Object.fromEntries(Object.entries(morseMap).map(e=>[e[1],e[0]]));
-
-function caesar(str, shift) {
+// shift cipher
+function caesar(str, shift){
   return str.split("").map(c=>{
-    let code=c.charCodeAt(0);
-    if(code>=32 && code<=126){
-      return String.fromCharCode(((code-32+shift)%95+95)%95+32);
+    let n=c.charCodeAt(0);
+    if(n>=32 && n<=126){
+      return String.fromCharCode(((n-32+shift)%95+95)%95+32);
     }
     return c;
   }).join("");
 }
 
+// binary morse (lossless)
 function toMorse(str){
-  return str.toUpperCase().split("").map(c=>{
-    if(c===" ") return "/";
-    return morseMap[c]||"";
-  }).join(" ");
+  return [...str].map(c=>{
+    return c.charCodeAt(0)
+      .toString(2)
+      .padStart(8,"0")
+      .replace(/0/g,".")
+      .replace(/1/g,"-");
+  }).join(" / ");
 }
 
 function fromMorse(str){
-  return str.split(" ").map(c=>{
-    if(c==="/") return " ";
-    return revMorse[c]||"";
+  return str.split(" / ").map(bits=>{
+    let bin = bits.replace(/\./g,"0").replace(/-/g,"1");
+    return String.fromCharCode(parseInt(bin,2));
   }).join("");
 }
 
+// opposite order:
+// morse -> base64 -> shift+7
 function encode(){
-  let t=document.getElementById("input").value;
-  t=caesar(t,7);
-  t=btoa(t);
-  t=toMorse(t);
-  document.getElementById("output").value=t;
+  let t = document.getElementById("input").value;
+  t = toMorse(t);
+  t = btoa(t);
+  t = caesar(t,7);
+  document.getElementById("output").value = t;
 }
 
+// reverse:
+// shift-7 -> base64 -> morse
 function decode(){
-  let t=document.getElementById("input").value;
-  t=fromMorse(t);
-  t=atob(t);
-  t=caesar(t,-7);
-  document.getElementById("output").value=t;
+  let t = document.getElementById("input").value;
+  t = caesar(t,-7);
+  t = atob(t);
+  t = fromMorse(t);
+  document.getElementById("output").value = t;
 }
 </script>
 </body>
